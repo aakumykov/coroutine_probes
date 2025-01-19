@@ -8,6 +8,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -23,8 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val name = "Корутина"
-        val job = Job()
-        val scope = CoroutineScope(job)
+        val scope = CoroutineScope(Dispatchers.IO)
         val ce = CancellationException("Самоотмена $name")
 
         this.job = scope.launch {
@@ -32,11 +32,10 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG,"$name (старт)")
                 delay(100)
 
-                cancel(ce)
-                this.cancel(ce)
-                this.coroutineContext.job.cancel(ce)
-                job.cancel(ce)
-                scope.cancel(ce)
+//                cancel(ce)
+//                this.cancel(ce)
+//                this.coroutineContext.job.cancel(ce)
+//                scope.cancel(ce)
 
                 this@MainActivity.job?.cancel(ce)
                     ?: run { Log.w(TAG, "this@MainActivity.job == null") }
