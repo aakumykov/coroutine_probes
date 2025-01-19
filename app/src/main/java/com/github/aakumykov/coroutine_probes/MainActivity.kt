@@ -6,7 +6,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -24,9 +23,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val name = "Корутина"
+        val job = Job()
+        val scope = CoroutineScope(job)
         val ce = CancellationException("Самоотмена $name")
 
-        this.job = lifecycleScope.launch {
+        this.job = scope.launch {
             try {
                 Log.d(TAG,"$name (старт)")
                 delay(100)
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity() {
                 cancel(ce)
                 this.cancel(ce)
                 this.coroutineContext.job.cancel(ce)
+                job.cancel(ce)
+                scope.cancel(ce)
 
                 this@MainActivity.job?.cancel(ce)
                     ?: run { Log.w(TAG, "this@MainActivity.job == null") }
