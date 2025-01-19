@@ -63,6 +63,8 @@ class MainActivity : AppCompatActivity() {
                     Log.w(TAG, "externalJob == null")
                 }
 
+                throw ce
+
                 Log.d(TAG,"$name (финиш)")
 
             } catch (e: CancellationException) {
