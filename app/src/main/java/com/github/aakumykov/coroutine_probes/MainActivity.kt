@@ -14,6 +14,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,13 +49,20 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG,"$name (старт)")
                 delay(1000)
 
-                cancel(ce)
-                this.cancel(ce)
+                // Два способа, по сути, равнозначны.
+                if (Random.nextBoolean()) {
+                    cancel(ce)
+                    delay(1)
+                } else {
+                    throw ce
+                }
+
+                /*this.cancel(ce)
                 this.coroutineContext.job.cancel(ce)
                 job.cancel(ce)
-                scope.cancel(ce)
+                scope.cancel(ce)*/
 
-                if (externalJob != null) {
+                /*if (externalJob != null) {
                     Log.i(TAG, "externalJob: ${externalJob}")
                     Log.i(TAG, "       this: ${this}")
                     Log.d(TAG, "externalJob != null, пробую отменить")
@@ -63,7 +71,7 @@ class MainActivity : AppCompatActivity() {
                     Log.w(TAG, "externalJob == null")
                 }
 
-                throw ce
+                throw ce*/
 
                 Log.d(TAG,"$name (финиш)")
 
