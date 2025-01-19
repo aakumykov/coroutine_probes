@@ -51,6 +51,13 @@ class MainActivity : AppCompatActivity() {
                 job.cancel(ce)
                 scope.cancel(ce)
 
+                if (externalJob != null) {
+                    Log.d(TAG, "externalJob != null, пробую отменить")
+                    externalJob!!.cancel(ce)
+                } else {
+                    Log.w(TAG, "externalJob == null")
+                }
+
                 Log.d(TAG,"$name (финиш)")
 
             } catch (e: CancellationException) {
