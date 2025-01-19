@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    private var job: Job? = null
+    private var externalJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         val scope = CoroutineScope(job)
         val ce = CancellationException("Самоотмена $name")
 
-        this.job = scope.launch {
+        externalJob = scope.launch {
             try {
                 Log.d(TAG,"$name (старт)")
                 delay(100)
@@ -38,12 +38,12 @@ class MainActivity : AppCompatActivity() {
                 job.cancel(ce)
                 scope.cancel(ce)
 
-                this@MainActivity.job?.cancel(ce)
-                    ?: run { Log.w(TAG, "this@MainActivity.job == null") }
+                externalJob?.cancel(ce)
+                    ?: run { Log.w(TAG, "externalJob == null") }
 
                 Log.d(TAG,"$name (финиш)")
             } catch (e: CancellationException) {
-                Log.d(TAG,"${e.javaClass.simpleName}: ${e.message}")
+                Log.w(TAG,"${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 Log.d(TAG,"$name (финальный штрих)")
             }
