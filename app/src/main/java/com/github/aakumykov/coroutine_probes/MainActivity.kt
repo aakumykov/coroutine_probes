@@ -33,9 +33,12 @@ class MainActivity : AppCompatActivity() {
             externalJob?.cancel(ce)
                 ?: run { Log.w(TAG, "externalJob == null") }
         }
+
+        runCoroutine()
     }
 
     private fun runCoroutine() {
+        Log.d(TAG, "------------- runCoroutine() -------------")
 
         val job = Job()
         val scope = CoroutineScope(job)
@@ -43,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         externalJob = scope.launch {
             try {
                 Log.d(TAG,"$name (старт)")
-                delay(3000)
+                delay(1000)
 
                 cancel(ce)
                 this.cancel(ce)
@@ -52,6 +55,8 @@ class MainActivity : AppCompatActivity() {
                 scope.cancel(ce)
 
                 if (externalJob != null) {
+                    Log.i(TAG, "externalJob: ${externalJob}")
+                    Log.i(TAG, "       this: ${this}")
                     Log.d(TAG, "externalJob != null, пробую отменить")
                     externalJob!!.cancel(ce)
                 } else {
