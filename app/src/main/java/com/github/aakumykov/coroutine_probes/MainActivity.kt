@@ -15,6 +15,9 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
+
+    private var job: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -24,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         val scope = CoroutineScope(job)
         val ce = CancellationException("Самоотмена $name")
 
-        scope.launch {
+        this.job = scope.launch {
             try {
                 Log.d(TAG,"$name (старт)")
                 delay(100)
@@ -34,6 +37,9 @@ class MainActivity : AppCompatActivity() {
                 this.coroutineContext.job.cancel(ce)
                 job.cancel(ce)
                 scope.cancel(ce)
+
+                this@MainActivity.job?.cancel(ce)
+                    ?: run { Log.w(TAG, "this@MainActivity.job == null") }
 
                 Log.d(TAG,"$name (финиш)")
             } catch (e: CancellationException) {
