@@ -6,8 +6,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -16,7 +18,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    private var job: Job? = null
+    private var externalJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,11 +28,12 @@ class MainActivity : AppCompatActivity() {
         val job = Job()
         val scope = CoroutineScope(job)
         val ce = CancellationException("Самоотмена $name")
+        val ee = CancellationException("Внешняя отмена $name")
 
-        this.job = scope.launch {
+        externalJob = scope.launch {
             try {
                 Log.d(TAG,"$name (старт)")
-                delay(100)
+                delay(1000)
 
                 cancel(ce)
                 this.cancel(ce)
@@ -38,15 +41,20 @@ class MainActivity : AppCompatActivity() {
                 job.cancel(ce)
                 scope.cancel(ce)
 
-                this@MainActivity.job?.cancel(ce)
-                    ?: run { Log.w(TAG, "this@MainActivity.job == null") }
+                externalJob?.cancel(ce)
+                    ?: run { Log.w(TAG, "externalJob is null") }
 
                 Log.d(TAG,"$name (финиш)")
             } catch (e: CancellationException) {
-                Log.d(TAG,"${e.javaClass.simpleName}: ${e.message}")
+                Log.w(TAG,"${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 Log.d(TAG,"$name (финальный штрих)")
             }
+        }
+
+        lifecycleScope.launch (Dispatchers.IO) {
+            delay(100)
+            externalJob!!.cancel(ee)
         }
     }
 
