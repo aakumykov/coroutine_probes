@@ -67,6 +67,11 @@ class MainActivity : AppCompatActivity() {
 
             } catch (e: CancellationException) {
                 Log.w(TAG,"${e.javaClass.simpleName}: ${e.message}")
+                // [Документация](https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative)
+                //  говорит, что для нормального фнкционирования иерархии корутин пойманное CancellationException
+                //  должно быть проброшено дальше.
+                //  Но и это не помогает отменить корутину изнутри.
+                throw e
 
             } finally {
                 Log.d(TAG,"$name (финальный штрих)")
