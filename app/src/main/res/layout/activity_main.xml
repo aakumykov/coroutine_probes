@@ -8,16 +8,10 @@
     android:orientation="vertical"
     tools:context=".MainActivity" >
 
-    <Button
-        android:id="@+id/startButton"
+    <TextView
+        android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#26A69A"
-        android:text="Запустить корутину с самоотменой" />
-
-    <Button
-        android:id="@+id/stopButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Отменить корутину вручную" />
+        android:textAlignment="center"
+        android:text="Зависание SupervisorJob\nс промежуточным родительским Job-ом" />
 </LinearLayout>

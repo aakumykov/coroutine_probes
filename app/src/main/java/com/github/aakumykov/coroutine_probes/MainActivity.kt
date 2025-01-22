@@ -1,20 +1,17 @@
 package com.github.aakumykov.coroutine_probes
 
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlin.random.Random
+import android.util.Log
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,68 +23,43 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<Button>(R.id.startButton).setOnClickListener {
-            runCoroutine()
-        }
+        val rootScope = CoroutineScope(Dispatchers.IO)
 
-        findViewById<Button>(R.id.stopButton).setOnClickListener {
-            externalJob?.cancel(ce)
-                ?: run { Log.w(TAG, "externalJob == null") }
-        }
+        val list = buildList<String> { repeat(8) { i -> add("Файл-${i + 1}") } }
 
-        runCoroutine()
+        rootScope.launch {
+            log("-----> rootScope (начало)")
+
+            val rootLocalScope = this
+
+            // Перебор кусков (начало)
+            var chunkNum = 1
+            list.chunked(3).forEach { chunk ->
+
+                launch { // Скачивание одного куска
+                    val chunkLocalScope = this
+
+                    log("-> Скачивание куска-$chunkNum")
+                    chunk.map { fileName ->
+
+                        // Скачивание одного файла (старт)
+                        launch (SupervisorJob(rootLocalScope.coroutineContext.job)) {
+                            log("Скачивание $fileName")
+                            delay(1000)
+                        } // Скачивание одного файла (финиш)
+
+                    }.joinAll() // Ожидание скачивания файлов из куска
+
+                }.join() // ожидание скачивания куска
+
+                chunkNum++
+            } // Перебор кусков (конец)
+
+            log("-----> rootScope (конец)")
+        } // rootJob
     }
 
-    private fun runCoroutine() {
-        Log.d(TAG, "------------- runCoroutine() -------------")
-
-        val job = Job()
-        val scope = CoroutineScope(job)
-
-        externalJob = scope.launch {
-            try {
-                Log.d(TAG,"$name (старт)")
-                delay(1000)
-
-                // Два способа, по сути, равнозначны.
-                if (Random.nextBoolean()) {
-                    cancel(ce)
-                    delay(1)
-                } else {
-                    throw ce
-                }
-
-                /*this.cancel(ce)
-                this.coroutineContext.job.cancel(ce)
-                job.cancel(ce)
-                scope.cancel(ce)*/
-
-                /*if (externalJob != null) {
-                    Log.i(TAG, "externalJob: ${externalJob}")
-                    Log.i(TAG, "       this: ${this}")
-                    Log.d(TAG, "externalJob != null, пробую отменить")
-                    externalJob!!.cancel(ce)
-                } else {
-                    Log.w(TAG, "externalJob == null")
-                }
-
-                throw ce*/
-
-                Log.d(TAG,"$name (финиш)")
-
-            } catch (e: CancellationException) {
-                Log.w(TAG,"${e.javaClass.simpleName}: ${e.message}")
-                // [Документация](https://kotlinlang.org/docs/cancellation-and-timeouts.html#cancellation-is-cooperative)
-                //  говорит, что для нормального фнкционирования иерархии корутин пойманное CancellationException
-                //  должно быть проброшено дальше.
-                //  Но и это не помогает отменить корутину изнутри.
-                throw e
-
-            } finally {
-                Log.d(TAG,"$name (финальный штрих)")
-            }
-        }
-    }
+    private fun log(text: String) = Log.d(TAG, text)
 
     companion object {
         val TAG: String = "KOTLIN"
