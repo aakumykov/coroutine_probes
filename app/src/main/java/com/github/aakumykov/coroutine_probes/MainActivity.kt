@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         findViewById<Button>(R.id.startButton).setOnClickListener { work() }
+        work()
     }
 
     private fun work() {
@@ -32,40 +33,21 @@ class MainActivity : AppCompatActivity() {
         log("========= work() ========")
         val rootScope = CoroutineScope(Dispatchers.IO)
 
-        val list = buildList<String> { repeat(8) { i -> add("Файл-${i + 1}") } }
+        val list: List<Int> = listOf(1,2,3,4,5)
 
         rootScope.launch {
+            val rootLocalScope = this
             log("-----> rootScope (начало)")
 
-            val rootLocalScope = this
-
-            // Перебор кусков (начало)
-            var chunkNum = 1
-            list.chunked(3).forEach { chunk ->
-
-                launch { // Скачивание одного куска
-                    val chunkLocalScope = this
+            list.map {  i ->
+                launch (SupervisorJob(rootLocalScope.coroutineContext.job)) {
+                    log("Скачивание файла-$i")
                     delay(1000)
-
-                    log("-> Скачивание куска-$chunkNum")
-                    chunk.map { fileName ->
-
-                        // Скачивание одного файла (старт)
-                        // ЗАМЕНИ rootLocalScope НА chunkLocalScope, ЧТОБЫ ПОЛУЧИТЬ ЗАВИСАНИЕ.
-                        launch (SupervisorJob(chunkLocalScope.coroutineContext.job)) {
-                            log("Скачивание $fileName")
-                            delay(1000)
-                        } // Скачивание одного файла (финиш)
-
-                    }.joinAll() // Ожидание скачивания файлов из куска
-
-                }.join() // ожидание скачивания куска
-
-                chunkNum++
-            } // Перебор кусков (конец)
+                }
+            }.joinAll()
 
             log("-----> rootScope (конец)")
-        } // rootJob
+        }
     }
 
     private fun log(text: String) = Log.d(TAG, text)
