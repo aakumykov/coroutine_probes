@@ -12,6 +12,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import android.util.Log
+import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,7 +23,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        findViewById<Button>(R.id.startButton).setOnClickListener { work() }
+    }
 
+    private fun work() {
+        log("")
+        log("")
+        log("========= work() ========")
         val rootScope = CoroutineScope(Dispatchers.IO)
 
         val list = buildList<String> { repeat(8) { i -> add("Файл-${i + 1}") } }
@@ -38,13 +45,14 @@ class MainActivity : AppCompatActivity() {
 
                 launch { // Скачивание одного куска
                     val chunkLocalScope = this
+                    delay(1000)
 
                     log("-> Скачивание куска-$chunkNum")
                     chunk.map { fileName ->
 
                         // Скачивание одного файла (старт)
                         // ЗАМЕНИ rootLocalScope НА chunkLocalScope, ЧТОБЫ ПОЛУЧИТЬ ЗАВИСАНИЕ.
-                        launch (SupervisorJob(rootLocalScope.coroutineContext.job)) {
+                        launch (SupervisorJob(chunkLocalScope.coroutineContext.job)) {
                             log("Скачивание $fileName")
                             delay(1000)
                         } // Скачивание одного файла (финиш)

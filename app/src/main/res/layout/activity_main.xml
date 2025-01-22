@@ -14,4 +14,12 @@
         android:layout_height="wrap_content"
         android:textAlignment="center"
         android:text="Зависание SupervisorJob\nс промежуточным родительским Job-ом" />
+
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Пуск"
+        />
+
 </LinearLayout>
