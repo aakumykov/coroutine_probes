@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
                     chunk.map { fileName ->
 
                         // Скачивание одного файла (старт)
+                        // ЗАМЕНИ rootLocalScope НА chunkLocalScope, ЧТОБЫ ПОЛУЧИТЬ ЗАВИСАНИЕ.
                         launch (SupervisorJob(rootLocalScope.coroutineContext.job)) {
                             log("Скачивание $fileName")
                             delay(1000)
