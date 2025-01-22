@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
                 val childLocalScope = this
 
                 list.map {  i ->
-                    launch (SupervisorJob(rootLocalScope.coroutineContext.job)) {
+                    launch (SupervisorJob(childLocalScope.coroutineContext.job)) {
                         log("Скачивание файла-$i")
                         delay(1000)
                     }
