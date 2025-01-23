@@ -1,5 +1,6 @@
 package com.github.aakumykov.coroutine_probes
 
+import android.app.TaskStackBuilder
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.CancellationException
@@ -8,11 +9,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,11 +24,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        findViewById<Button>(R.id.startButton).setOnClickListener { work() }
-        work()
+        findViewById<Button>(R.id.startButton).setOnClickListener { startWork() }
+        findViewById<Button>(R.id.cancelButton).setOnClickListener { cancelWork() }
+        startWork()
     }
 
-    private fun work() {
+    private fun startWork() {
         log("")
         log("")
         log("========= work() ========")
@@ -35,17 +37,21 @@ class MainActivity : AppCompatActivity() {
 
         val list: List<Int> = listOf(1,2,3,4,5)
 
-        rootScope.launch {
+        val rootJob = Job()
+        val mediumJob = Job(rootJob)
+        val lowestJob = SupervisorJob(mediumJob)
+
+        externalJob = rootScope.launch (rootJob) {
             val rootLocalScope = this
             log("-----> rootScope (начало)")
 
-            launch {
+            launch (mediumJob) {
                 val childLocalScope = this
 
                 log("-> Перед обработкой списка")
 
                 list.map {  i ->
-                    launch (Job(childLocalScope.coroutineContext.job)) {
+                    launch (lowestJob) {
                         log("Скачивание файла-$i")
                         delay(1000)
                     }
@@ -59,7 +65,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun cancelWork() {
+        externalJob?.cancel(CancellationException("Отменено пользователем"))
+            ?: run { visibleError("нет externalJob") }
+    }
+
+    private fun visibleError(errorMsg: String) {
+        logE(errorMsg)
+        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
+    }
+
     private fun log(text: String) = Log.d(TAG, text)
+    private fun logE(text: String) = Log.e(TAG, text)
 
     companion object {
         val TAG: String = "KOTLIN"
