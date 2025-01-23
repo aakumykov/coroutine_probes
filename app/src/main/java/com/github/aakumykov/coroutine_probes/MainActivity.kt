@@ -42,26 +42,31 @@ class MainActivity : AppCompatActivity() {
         val lowestJob = SupervisorJob(mediumJob)
 
         externalJob = rootScope.launch (rootJob) {
-            val rootLocalScope = this
-            log("-----> rootScope (начало)")
+            try {
+                log("-----> rootScope (начало)")
 
-            launch (mediumJob) {
-                val childLocalScope = this
+                launch (mediumJob) {
+                    val childLocalScope = this
 
-                log("-> Перед обработкой списка")
+                    log("-> Перед обработкой списка")
 
-                list.map {  i ->
-                    launch (lowestJob) {
-                        log("Скачивание файла-$i")
-                        delay(1000)
-                    }
-                }.joinAll()
+                    list.map {  i ->
+                        launch (lowestJob) {
+                            log("Скачивание файла-$i")
+                            delay(1000)
+                        }
+                    }.joinAll()
 
-                log("-> После обработки списка, joinAll()")
+                    log("-> После обработки списка, joinAll()")
 
-            }.join()
+                }.join()
 
-            log("-----> rootScope (конец)")
+                log("-----> rootScope (конец)")
+
+            } catch (e: CancellationException) {
+                logW("rootScope отменён: ${e.message}")
+                throw e
+            }
         }
     }
 
@@ -76,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun log(text: String) = Log.d(TAG, text)
+    private fun logW(text: String) = Log.w(TAG, text)
     private fun logE(text: String) = Log.e(TAG, text)
 
     companion object {
