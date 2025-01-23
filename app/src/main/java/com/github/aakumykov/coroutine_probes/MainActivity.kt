@@ -43,28 +43,31 @@ class MainActivity : AppCompatActivity() {
 
         rootScope.launch (rootJob!!) {
             try {
-
                 log("-----> rootScope (начало)")
 
                 launch (mediumJob) {
-                    val childLocalScope = this
+                    try {
+                        log("-> Перед обработкой списка")
+                        delay(1000)
 
-                    log("-> Перед обработкой списка")
-                    delay(1000)
-
-                    list.map {  i ->
-                        launch (lowestJob) {
-                            try {
-                                log("Скачивание файла-$i")
-                                delay(1000)
-                            } catch (e: CancellationException) {
-                                logW("Скачивание файла-$i отменено: ${e.message}")
+                        list.map {  i ->
+                            launch (lowestJob) {
+                                try {
+                                    log("Скачивание файла-$i")
+                                    delay(1000)
+                                } catch (e: CancellationException) {
+                                    logW("Скачивание файла-$i отменено: ${e.message}")
+                                    throw e
+                                }
                             }
-                        }
-                    }.joinAll()
+                        }.joinAll()
 
-                    log("-> После обработки списка")
+                        log("-> После обработки списка")
 
+                    } catch (e: CancellationException) {
+                        logW("Средняя корутина отменена: ${e.message}")
+                        throw e
+                    }
                 }.join()
 
                 log("-----> rootScope (конец)")
