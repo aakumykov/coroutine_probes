@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         log("========= work() ========")
         val rootScope = CoroutineScope(Dispatchers.IO)
 
-        val list: List<Int> = listOf(1,2,3,4,5)
+        val list: List<Int> = buildList { repeat(8) { i-> add(i) } }
 
         rootJob = Job()
         val mediumJob = Job(rootJob)
@@ -45,27 +45,33 @@ class MainActivity : AppCompatActivity() {
             try {
                 log("-----> rootScope (начало)")
 
+                var chunkNum = 1
+                var chunkSize = -1
                 launch (mediumJob) {
                     try {
-                        log("-> Перед обработкой списка")
-                        delay(1000)
 
-                        list.map {  i ->
-                            launch (lowestJob) {
-                                try {
-                                    log("Скачивание файла-$i")
-                                    delay(1000)
-                                } catch (e: CancellationException) {
-                                    logW("Скачивание файла-$i отменено: ${e.message}")
-                                    throw e
+                        list.chunked(3).forEach { chunk ->
+                            chunkSize = chunk.size
+                            log("-> Обработка куска-$chunkNum ($chunkSize)")
+                            delay(1000)
+
+                            chunk.map {  i ->
+                                launch (lowestJob) {
+                                    try {
+                                        log("Скачивание файла-$i")
+                                        delay(1000)
+                                    } catch (e: CancellationException) {
+                                        logW("Скачивание файла-$i отменено: ${e.message}")
+                                        throw e
+                                    }
                                 }
-                            }
-                        }.joinAll()
+                            }.joinAll()
 
-                        log("-> После обработки списка")
+                            chunkNum++
+                        }
 
                     } catch (e: CancellationException) {
-                        logW("Средняя корутина отменена: ${e.message}")
+                        logW("Обработка куска-$chunkNum ($chunkSize) отменена: ${e.message}")
                         throw e
                     }
                 }.join()
