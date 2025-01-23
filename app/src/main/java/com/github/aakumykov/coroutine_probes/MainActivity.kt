@@ -40,7 +40,15 @@ class MainActivity : AppCompatActivity() {
         val rootScope = CoroutineScope(Dispatchers.IO)
 
         val rootEH = CoroutineExceptionHandler { coroutineContext, throwable ->
-            logE("Ошибка в какой-то корутине: ${throwable.message}")
+            logE("Ошибка в корневой корутине: ${throwable.message}")
+        }
+
+        val mediumEH = CoroutineExceptionHandler { coroutineContext, throwable ->
+            logE("Ошибка в серединной корутине: ${throwable.message}")
+        }
+
+        val lowEH = CoroutineExceptionHandler { coroutineContext, throwable ->
+            logE("Ошибка в низкоуровневой корутине: ${throwable.message}")
         }
 
         val list: List<Int> = buildList { repeat(8) { i-> add(i) } }
@@ -55,23 +63,25 @@ class MainActivity : AppCompatActivity() {
 
                 var chunkNum = 1
                 var chunkSize = -1
-                launch (mediumJob) {
-                    try {
 
-                        list.chunked(3).forEach { chunk ->
-                            chunkSize = chunk.size
-                            log("-> Обработка куска-$chunkNum ($chunkSize)")
-                            delay(500)
+                list.chunked(3).forEach { chunk ->
+                    chunkSize = chunk.size
+                    log("-> Обработка куска-$chunkNum ($chunkSize)")
+                    delay(500)
+
+                    launch (mediumJob + mediumEH) {
+                        try {
+//                            if (random.nextInt(1,101) > 90) throw Exception("Ошибка куска $chunkNum")
 
                             chunk.map {  i ->
-                                launch (lowestJob) {
+                                launch (lowestJob + lowEH) {
                                     try {
-                                        if (random.nextBoolean()) {
+//                                        if (random.nextBoolean()) {
                                             log("Скачивание файла-$i")
                                             delay(1000)
-                                        } else {
-                                            throw Exception("Ошибка скачивания файла-$i")
-                                        }
+//                                        } else {
+//                                            throw Exception("Ошибка скачивания файла-$i")
+//                                        }
                                     } catch (e: CancellationException) {
                                         logW("Скачивание файла-$i отменено: ${e.message}")
                                         throw e
@@ -79,14 +89,14 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }.joinAll()
 
-                            chunkNum++
+                        } catch (e: CancellationException) {
+                            logW("Обработка куска-$chunkNum ($chunkSize) отменена: ${e.message}")
+                            throw e
                         }
+                    }.join()
 
-                    } catch (e: CancellationException) {
-                        logW("Обработка куска-$chunkNum ($chunkSize) отменена: ${e.message}")
-                        throw e
-                    }
-                }.join()
+                    chunkNum++
+                }
 
                 log("-----> rootScope (конец)")
 
