@@ -42,12 +42,17 @@ class MainActivity : AppCompatActivity() {
             launch {
                 val childLocalScope = this
 
+                log("-> Перед обработкой списка")
+
                 list.map {  i ->
-                    launch (SupervisorJob(childLocalScope.coroutineContext.job)) {
+                    launch (Job(childLocalScope.coroutineContext.job)) {
                         log("Скачивание файла-$i")
                         delay(1000)
                     }
                 }.joinAll()
+
+                log("-> После обработки списка, joinAll()")
+
             }.join()
 
             log("-----> rootScope (конец)")
