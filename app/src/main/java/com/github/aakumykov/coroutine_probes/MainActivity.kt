@@ -14,12 +14,15 @@ import kotlinx.coroutines.launch
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
     private val name = "Корутина"
     private val ce = CancellationException("Самоотмена $name")
     private var rootJob: Job? = null
+    private val random: Random get() = Random
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,7 +36,12 @@ class MainActivity : AppCompatActivity() {
         log("")
         log("")
         log("========= work() ========")
+
         val rootScope = CoroutineScope(Dispatchers.IO)
+
+        val rootEH = CoroutineExceptionHandler { coroutineContext, throwable ->
+            logE("Ошибка в какой-то корутине: ${throwable.message}")
+        }
 
         val list: List<Int> = buildList { repeat(8) { i-> add(i) } }
 
@@ -41,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         val mediumJob = Job(rootJob)
         val lowestJob = SupervisorJob(mediumJob)
 
-        rootScope.launch (rootJob!!) {
+        rootScope.launch (rootJob!! + rootEH) {
             try {
                 log("-----> rootScope (начало)")
 
@@ -53,13 +61,17 @@ class MainActivity : AppCompatActivity() {
                         list.chunked(3).forEach { chunk ->
                             chunkSize = chunk.size
                             log("-> Обработка куска-$chunkNum ($chunkSize)")
-                            delay(1000)
+                            delay(500)
 
                             chunk.map {  i ->
                                 launch (lowestJob) {
                                     try {
-                                        log("Скачивание файла-$i")
-                                        delay(1000)
+                                        if (random.nextBoolean()) {
+                                            log("Скачивание файла-$i")
+                                            delay(1000)
+                                        } else {
+                                            throw Exception("Ошибка скачивания файла-$i")
+                                        }
                                     } catch (e: CancellationException) {
                                         logW("Скачивание файла-$i отменено: ${e.message}")
                                         throw e
