@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                 list.chunked(3).forEach { chunk ->
                     chunkSize = chunk.size
                     log("-> Обработка куска-$chunkNum ($chunkSize)")
-//                    delay(500)
+                    delay(500)
 
                     launch (mediumJob + mediumEH) {
                         try {
@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                                     try {
 //                                        if (random.nextBoolean()) {
                                             log("Скачивание файла-$i")
-//                                            delay(1000)
+                                            delay(1000)
 //                                        } else {
 //                                            throw Exception("Ошибка скачивания файла-$i")
 //                                        }
