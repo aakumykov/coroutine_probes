@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
 
         externalJob = rootScope.launch (rootJob) {
             try {
-                log("-----> rootScope (начало)")
 
                 launch (mediumJob) {
                     val childLocalScope = this
@@ -56,8 +55,6 @@ class MainActivity : AppCompatActivity() {
                             delay(1000)
                         }
                     }.joinAll()
-
-                    log("-> После обработки списка, joinAll()")
 
                 }.join()
 
