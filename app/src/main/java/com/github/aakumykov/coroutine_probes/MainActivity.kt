@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private val name = "Корутина"
     private val ce = CancellationException("Самоотмена $name")
-    private var externalJob: Job? = null
+    private var rootJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,24 +37,33 @@ class MainActivity : AppCompatActivity() {
 
         val list: List<Int> = listOf(1,2,3,4,5)
 
-        val rootJob = Job()
+        rootJob = Job()
         val mediumJob = Job(rootJob)
         val lowestJob = SupervisorJob(mediumJob)
 
-        externalJob = rootScope.launch (rootJob) {
+        rootScope.launch (rootJob!!) {
             try {
+
+                log("-----> rootScope (начало)")
 
                 launch (mediumJob) {
                     val childLocalScope = this
 
                     log("-> Перед обработкой списка")
+                    delay(1000)
 
                     list.map {  i ->
                         launch (lowestJob) {
-                            log("Скачивание файла-$i")
-                            delay(1000)
+                            try {
+                                log("Скачивание файла-$i")
+                                delay(1000)
+                            } catch (e: CancellationException) {
+                                logW("Скачивание файла-$i отменено: ${e.message}")
+                            }
                         }
                     }.joinAll()
+
+                    log("-> После обработки списка")
 
                 }.join()
 
@@ -68,7 +77,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cancelWork() {
-        externalJob?.cancel(CancellationException("Отменено пользователем"))
+        rootJob?.cancel(CancellationException("Отменено пользователем"))
             ?: run { visibleError("нет externalJob") }
     }
 
