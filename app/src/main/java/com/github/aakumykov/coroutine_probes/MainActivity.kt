@@ -13,6 +13,8 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import android.util.Log
 import android.widget.Button
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,9 +36,13 @@ class MainActivity : AppCompatActivity() {
 
         val rootScope = CoroutineScope(Dispatchers.IO)
 
+        val rootEH = CoroutineExceptionHandler { coroutineContext, throwable ->
+            logE("ERROR in rootScope: ${throwable.message}")
+        }
+
         val list: List<Int> = listOf(1,2,3,4,5)
 
-        rootJob = rootScope.launch {
+        rootJob = rootScope.launch (rootEH) {
             try {
 
                 val rootLocalScope = this
@@ -54,8 +60,12 @@ class MainActivity : AppCompatActivity() {
                             launch (childJob) {
                                 val name = "processing file-$i"
                                 try {
-                                    log("  $name")
-                                    delay(1000)
+                                    if (random.nextBoolean()) {
+                                        log("  $name")
+                                        delay(1000)
+                                    } else {
+                                        throw Exception("Error in $name")
+                                    }
                                 } catch (e: CancellationException) {
                                     logW("$name cancelled: ${e.message}")
                                     throw e
@@ -98,8 +108,11 @@ class MainActivity : AppCompatActivity() {
     private fun log(text: String) = Log.d(TAG, text)
     private fun logI(text: String) = Log.i(TAG, text)
     private fun logW(text: String) = Log.w(TAG, text)
+    private fun logE(text: String) = Log.e(TAG, text)
 
     companion object {
         val TAG: String = "KOTLIN"
     }
+
+    private val random: Random = Random
 }
