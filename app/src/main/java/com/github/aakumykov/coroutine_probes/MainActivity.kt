@@ -13,43 +13,49 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import android.util.Log
 import android.widget.Button
-import kotlinx.coroutines.isActive
 
 class MainActivity : AppCompatActivity() {
 
-    private val name = "Корутина"
-    private val ce = CancellationException("Самоотмена $name")
-    private var externalJob: Job? = null
+    private var rootJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        findViewById<Button>(R.id.startButton).setOnClickListener { work() }
-        work()
+        findViewById<Button>(R.id.startButton).setOnClickListener { startWork() }
+        findViewById<Button>(R.id.cancelButton).setOnClickListener { cancelWork() }
+        startWork()
     }
 
-    private fun work() {
+    private fun startWork() {
         log("")
         log("")
         log("========= work() clicked ========")
+        log("")
+
         val rootScope = CoroutineScope(Dispatchers.IO)
 
         val list: List<Int> = listOf(1,2,3,4,5)
 
-        rootScope.launch {
+        rootJob = rootScope.launch {
             val rootLocalScope = this
             log("-----> rootScope (start)")
 
             launch {
                 val childLocalScope = this
-                val childJob = Job(childLocalScope.coroutineContext.job)
-//                val childJob = SupervisorJob(childLocalScope.coroutineContext.job)
+
+//                val childJob = Job(childLocalScope.coroutineContext.job)
+                val childJob = SupervisorJob(childLocalScope.coroutineContext.job)
 
                 list.map {  i ->
                     launch (childJob) {
-//                    launch (SupervisorJob(childLocalScope.coroutineContext.job)) {
-                        log("  processing file-$i")
-                        delay(1000)
+                        val name = "processing file-$i"
+                        try {
+                            log("  $name")
+                            delay(1000)
+                        } catch (e: CancellationException) {
+                            logW("$name cancelled: ${e.message}")
+                            throw e
+                        }
                     }
                 }.joinAll()
 
@@ -63,6 +69,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    private fun cancelWork() {
+        rootJob?.cancel(CancellationException("Отменено пользователем"))
+    }
+
+
     private fun debugJobStates(job: Job, comment: String) {
         logI("Job ($comment):")
         logI("    * isActive: ${job.isActive}")
@@ -72,6 +84,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun log(text: String) = Log.d(TAG, text)
     private fun logI(text: String) = Log.i(TAG, text)
+    private fun logW(text: String) = Log.w(TAG, text)
 
     companion object {
         val TAG: String = "KOTLIN"
