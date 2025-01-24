@@ -13,6 +13,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import android.util.Log
 import android.widget.Button
+import kotlinx.coroutines.isActive
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,36 +31,47 @@ class MainActivity : AppCompatActivity() {
     private fun work() {
         log("")
         log("")
-        log("========= work() ========")
+        log("========= work() clicked ========")
         val rootScope = CoroutineScope(Dispatchers.IO)
 
         val list: List<Int> = listOf(1,2,3,4,5)
 
         rootScope.launch {
             val rootLocalScope = this
-            log("-----> rootScope (начало)")
+            log("-----> rootScope (start)")
 
             launch {
                 val childLocalScope = this
-
-                log("-> Перед обработкой списка")
+                val childJob = Job(childLocalScope.coroutineContext.job)
+//                val childJob = SupervisorJob(childLocalScope.coroutineContext.job)
 
                 list.map {  i ->
-                    launch (Job(childLocalScope.coroutineContext.job)) {
-                        log("Скачивание файла-$i")
+                    launch (childJob) {
+//                    launch (SupervisorJob(childLocalScope.coroutineContext.job)) {
+                        log("  processing file-$i")
                         delay(1000)
                     }
                 }.joinAll()
 
-                log("-> После обработки списка, joinAll()")
+                debugJobStates(childJob, "before complete()")
+                childJob.complete()
+                debugJobStates(childJob, "after complete()")
 
             }.join()
 
-            log("-----> rootScope (конец)")
+            log("-----> rootScope (finish)")
         }
     }
 
+    private fun debugJobStates(job: Job, comment: String) {
+        logI("Job ($comment):")
+        logI("    * isActive: ${job.isActive}")
+        logI("    * isCompleted: ${job.isCompleted}")
+        logI("    * isCancelled: ${job.isCancelled}")
+    }
+
     private fun log(text: String) = Log.d(TAG, text)
+    private fun logI(text: String) = Log.i(TAG, text)
 
     companion object {
         val TAG: String = "KOTLIN"
