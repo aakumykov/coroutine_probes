@@ -37,35 +37,48 @@ class MainActivity : AppCompatActivity() {
         val list: List<Int> = listOf(1,2,3,4,5)
 
         rootJob = rootScope.launch {
-            val rootLocalScope = this
-            log("-----> rootScope (start)")
+            try {
 
-            launch {
-                val childLocalScope = this
+                val rootLocalScope = this
+                log("-----> rootScope (start)")
+
+                launch {
+                    try {
+
+                        val childLocalScope = this
 
 //                val childJob = Job(childLocalScope.coroutineContext.job)
-                val childJob = SupervisorJob(childLocalScope.coroutineContext.job)
+                        val childJob = SupervisorJob(childLocalScope.coroutineContext.job)
 
-                list.map {  i ->
-                    launch (childJob) {
-                        val name = "processing file-$i"
-                        try {
-                            log("  $name")
-                            delay(1000)
-                        } catch (e: CancellationException) {
-                            logW("$name cancelled: ${e.message}")
-                            throw e
-                        }
+                        list.map {  i ->
+                            launch (childJob) {
+                                val name = "processing file-$i"
+                                try {
+                                    log("  $name")
+                                    delay(1000)
+                                } catch (e: CancellationException) {
+                                    logW("$name cancelled: ${e.message}")
+                                    throw e
+                                }
+                            }
+                        }.joinAll()
+
+                        debugJobStates(childJob, "before complete()")
+                        childJob.complete()
+                        debugJobStates(childJob, "after complete()")
+
+                    } catch (e: CancellationException) {
+                        logW("Middle Job cancelled: ${e.message}")
+                        throw e
                     }
-                }.joinAll()
 
-                debugJobStates(childJob, "before complete()")
-                childJob.complete()
-                debugJobStates(childJob, "after complete()")
+                }.join()
 
-            }.join()
+                log("-----> rootScope (finish)")
 
-            log("-----> rootScope (finish)")
+            } catch (e: CancellationException) {
+                logW("rootJob cancelled: ${e.message}")
+            }
         }
     }
 
